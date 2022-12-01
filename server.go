@@ -19,6 +19,20 @@ const (
 	port = 9090
 )
 
+func main() {
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	if err != nil {
+		panic(err)
+	}
+	server := grpc.NewServer()
+	permission.RegisterPermissionServiceServer(server, &permissionServer{})
+
+	log.Printf("Starting server on port %d", port)
+	if err := server.Serve(lis); err != nil {
+		panic(err)
+	}
+}
+
 type permissionServer struct {
 	permission.UnimplementedPermissionServiceServer
 }
@@ -92,18 +106,4 @@ func (s *permissionServer) RemoveRoleFromPlayer(ctx context.Context, request *pe
 	}
 
 	return &emptypb.Empty{}, nil
-}
-
-func main() {
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
-	if err != nil {
-		panic(err)
-	}
-	server := grpc.NewServer()
-	permission.RegisterPermissionServiceServer(server, &permissionServer{})
-
-	log.Printf("Starting server on port %d", port)
-	if err := server.Serve(lis); err != nil {
-		panic(err)
-	}
 }

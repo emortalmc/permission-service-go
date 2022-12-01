@@ -2,10 +2,10 @@ package mongo
 
 import (
 	"context"
-	"flag"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"os"
+	"permission-service-go/mongo/registry"
 )
 
 const database = "permission-service"
@@ -16,8 +16,8 @@ var (
 )
 
 func createMongoClient() *mongo.Client {
-	flag.Parse()
-	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(getMongoUri()))
+	mongoOptions := options.Client().ApplyURI(getMongoUri()).SetRegistry(registry.MongoRegistry)
+	client, err := mongo.Connect(context.Background(), mongoOptions)
 
 	if err != nil {
 		panic(err)

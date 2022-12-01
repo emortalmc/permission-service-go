@@ -11,8 +11,8 @@ type Role struct {
 }
 
 const (
-	PermissionState_ALLOW = "ALLOW"
-	PermissionState_DENY  = "DENY"
+	PermissionStateAllow = "ALLOW"
+	PermissionStateDeny  = "DENY"
 )
 
 type PermissionNode struct {

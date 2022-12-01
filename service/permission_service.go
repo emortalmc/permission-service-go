@@ -107,9 +107,9 @@ func UpdateRole(ctx context.Context, request *permission.RoleUpdateRequest) (*mo
 	for _, perm := range request.SetPermissions {
 		var conState string
 		if perm.State == permission.PermissionNode_ALLOW {
-			conState = model.PermissionState_ALLOW
+			conState = model.PermissionStateAllow
 		} else {
-			conState = model.PermissionState_DENY
+			conState = model.PermissionStateDeny
 		}
 
 		role.Permissions = append(role.Permissions, model.PermissionNode{Node: perm.Node, PermissionState: conState})
