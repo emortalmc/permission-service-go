@@ -21,7 +21,6 @@ var (
 )
 
 func GetRoles(ctx context.Context) ([]*model.Role, error) {
-
 	cursor, err := roleCollection.Find(ctx, bson.D{})
 	if err != nil {
 		return nil, err
@@ -61,11 +60,23 @@ func GetPlayerRoleIds(ctx context.Context, playerId uuid.UUID) ([]string, error)
 }
 
 func CreateRole(ctx context.Context, request *permission.RoleCreateRequest) (*model.Role, error) {
+	var displayPrefix string
+	var displayNameModifier string
+	if request.DisplayPrefix != nil {
+		displayPrefix = *request.DisplayPrefix
+	} else {
+		displayPrefix = ""
+	}
+	if request.DisplayName != nil {
+		displayNameModifier = *request.DisplayName
+	} else {
+		displayNameModifier = ""
+	}
 	role := model.Role{
 		Id:                  request.Id,
 		Priority:            request.Priority,
-		DisplayPrefix:       *request.DisplayPrefix,
-		DisplayNameModifier: *request.DisplayName,
+		DisplayPrefix:       displayPrefix,
+		DisplayNameModifier: displayNameModifier,
 		Permissions:         make([]model.PermissionNode, 0),
 	}
 
