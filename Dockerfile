@@ -6,7 +6,7 @@ COPY go.mod .
 RUN go mod download
 
 COPY . .
-RUN go build -o server-discovery .
+RUN go build -o server-discovery ./cmd
 
 FROM alpine
 

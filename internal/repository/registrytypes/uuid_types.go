@@ -1,6 +1,6 @@
 // Package registry
 // taken from https://gist.github.com/SupaHam/3afe982dc75039356723600ccc91ff77
-package registry
+package registrytypes
 
 import (
 	"fmt"
