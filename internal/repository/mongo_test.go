@@ -75,6 +75,10 @@ func TestMain(m *testing.M) {
 		return
 	})
 
+	if err != nil {
+		log.Fatalf("could not connect to docker: %s", err)
+	}
+
 	code := m.Run()
 
 	if err := pool.Purge(resource); err != nil {
@@ -168,6 +172,7 @@ func TestMongoRepository_GetRole(t *testing.T) {
 
 	role, err = repo.GetRole(context.Background(), testRole.Id)
 	assert.Equal(t, mongoDb.ErrNoDocuments, err)
+	assert.Nil(t, role)
 }
 
 func TestMongoRepository_DoesRoleExist(t *testing.T) {

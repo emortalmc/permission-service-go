@@ -71,19 +71,19 @@ func (m *mongoRepository) GetRole(ctx context.Context, roleId string) (*model.Ro
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	filter := bson.D{{"_id", roleId}}
+	filter := bson.M{"_id": roleId}
 
-	var result model.Role
+	var result *model.Role
 	err := m.roleCollection.FindOne(ctx, filter).Decode(&result)
 
-	return &result, err
+	return result, err
 }
 
 func (m *mongoRepository) DoesRoleExist(ctx context.Context, roleId string) (bool, error) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	filter := bson.D{{"_id", roleId}}
+	filter := bson.M{"_id": roleId}
 
 	count, err := m.roleCollection.CountDocuments(ctx, filter)
 
@@ -115,7 +115,7 @@ func (m *mongoRepository) GetPlayerRoleIds(ctx context.Context, playerId uuid.UU
 
 	filter := bson.M{"_id": playerId}
 
-	var result model.Player
+	var result *model.Player
 	err := m.playerCollection.FindOne(ctx, filter).Decode(&result)
 
 	if err != nil {
@@ -165,7 +165,7 @@ func (m *mongoRepository) RemoveRoleFromPlayer(ctx context.Context, playerId uui
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	result, err := m.playerCollection.UpdateOne(ctx, bson.D{{"_id", playerId}}, bson.M{"$pull": bson.M{"roles": roleId}})
+	result, err := m.playerCollection.UpdateOne(ctx, bson.M{"_id": playerId}, bson.M{"$pull": bson.M{"roles": roleId}})
 
 	if err != nil {
 		return err
