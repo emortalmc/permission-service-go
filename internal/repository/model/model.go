@@ -5,12 +5,14 @@ import (
 	"github.com/google/uuid"
 )
 
+const DefaultRoleId = "default"
+
 type Role struct {
-	Id            string           `bson:"_id"`
-	Priority      uint32           `bson:"priority"`
-	DisplayPrefix *string          `bson:"displayPrefix"`
-	DisplayName   *string          `bson:"displayName"`
-	Permissions   []PermissionNode `bson:"permissions"`
+	Id            string           `bson:"_id" ,json:"id"`
+	Priority      uint32           `bson:"priority" ,json:"priority"`
+	DisplayPrefix *string          `bson:"displayPrefix" ,json:"displayPrefix"`
+	DisplayName   *string          `bson:"displayName" ,json:"displayName"`
+	Permissions   []PermissionNode `bson:"permissions" ,json:"permissions"`
 }
 
 func (r *Role) ToProto() *protoModel.Role {
@@ -29,8 +31,8 @@ func (r *Role) ToProto() *protoModel.Role {
 }
 
 type PermissionNode struct {
-	Node            string                                    `bson:"node"`
-	PermissionState protoModel.PermissionNode_PermissionState `bson:"permissionState"`
+	Node            string                                    `bson:"node" ,json:"node"`
+	PermissionState protoModel.PermissionNode_PermissionState `bson:"permissionState" ,json:"permissionState"`
 }
 
 func (p *PermissionNode) ToProto() *protoModel.PermissionNode {
@@ -43,6 +45,6 @@ func (p *PermissionNode) ToProto() *protoModel.PermissionNode {
 // Player does not have an equivalent proto
 // as roles are retrieved separately from the player
 type Player struct {
-	Id    uuid.UUID `bson:"_id"`
-	Roles []string  `bson:"roles"`
+	Id    uuid.UUID `bson:"_id" ,json:"id"`
+	Roles []string  `bson:"roles" ,json:"roles"`
 }

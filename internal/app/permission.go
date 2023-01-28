@@ -38,5 +38,4 @@ func Run(ctx context.Context, cfg *config.Config, logger *zap.SugaredLogger) {
 		logger.Fatalw("failed to serve", "error", err)
 		return
 	}
-
 }

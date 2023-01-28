@@ -14,6 +14,12 @@ import (
 	"time"
 )
 
+const (
+	databaseName         = "permission-service"
+	roleCollectionName   = "roles"
+	playerCollectionName = "players"
+)
+
 type mongoRepository struct {
 	Repository
 	database *mongo.Database
@@ -23,8 +29,8 @@ type mongoRepository struct {
 }
 
 var (
-	AlreadyHasRoleError = errors.New("player already has role")
-	DoesNotHaveRoleError = errors.New("player does not have role")
+	AlreadyHasRoleError  = errors.New("player already has testRole")
+	DoesNotHaveRoleError = errors.New("player does not have testRole")
 )
 
 func NewMongoRepository(ctx context.Context, cfg config.MongoDBConfig) (Repository, error) {
@@ -33,11 +39,11 @@ func NewMongoRepository(ctx context.Context, cfg config.MongoDBConfig) (Reposito
 		return nil, err
 	}
 
-	database := client.Database("permission-service")
+	database := client.Database(databaseName)
 	return &mongoRepository{
 		database:         database,
-		roleCollection:   database.Collection("roles"),
-		playerCollection: database.Collection("players"),
+		roleCollection:   database.Collection(roleCollectionName),
+		playerCollection: database.Collection(playerCollectionName),
 	}, nil
 }
 
@@ -61,6 +67,32 @@ func (m *mongoRepository) GetRoles(ctx context.Context) ([]*model.Role, error) {
 	return slice, err
 }
 
+func (m *mongoRepository) GetRole(ctx context.Context, roleId string) (*model.Role, error) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	filter := bson.D{{"_id", roleId}}
+
+	var result model.Role
+	err := m.roleCollection.FindOne(ctx, filter).Decode(&result)
+
+	return &result, err
+}
+
+func (m *mongoRepository) DoesRoleExist(ctx context.Context, roleId string) (bool, error) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	filter := bson.D{{"_id", roleId}}
+
+	count, err := m.roleCollection.CountDocuments(ctx, filter)
+
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
 func (m *mongoRepository) CreateRole(ctx context.Context, role *model.Role) error {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
@@ -81,7 +113,7 @@ func (m *mongoRepository) GetPlayerRoleIds(ctx context.Context, playerId uuid.UU
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	filter := bson.D{{"_id", playerId}}
+	filter := bson.M{"_id": playerId}
 
 	var result model.Player
 	err := m.playerCollection.FindOne(ctx, filter).Decode(&result)
@@ -89,13 +121,13 @@ func (m *mongoRepository) GetPlayerRoleIds(ctx context.Context, playerId uuid.UU
 	if err != nil {
 		// insert into db if not exists
 		if err == mongo.ErrNoDocuments {
-			_, err := m.playerCollection.InsertOne(ctx, model.Player{Id: playerId, Roles: []string{"default"}})
+			_, err := m.playerCollection.InsertOne(ctx, model.Player{Id: playerId, Roles: []string{model.DefaultRoleId}})
 
 			if err != nil {
 				return nil, err
 			}
 
-			return []string{"default"}, nil
+			return []string{model.DefaultRoleId}, nil
 		} else {
 			return nil, err
 		}
@@ -115,6 +147,14 @@ func (m *mongoRepository) AddRoleToPlayer(ctx context.Context, playerId uuid.UUI
 	}
 
 	if result.ModifiedCount == 0 {
+		if result.MatchedCount == 0 {
+			// insert into db if not exists
+			_, err = m.playerCollection.InsertOne(ctx, model.Player{Id: playerId, Roles: []string{model.DefaultRoleId, roleId}})
+			if err != nil {
+				return err
+			}
+			return nil
+		}
 		return AlreadyHasRoleError
 	}
 
