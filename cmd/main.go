@@ -9,25 +9,30 @@ import (
 )
 
 func main() {
-	logger, err := createLogger()
+	cfg, err := config.LoadGlobalConfig()
+	if err != nil {
+		log.Fatal("failed to load config", err)
+	}
+
+	unsugared, err := createLogger(cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	cfg, err := config.LoadGlobalConfig()
-	if err != nil {
-		logger.Fatalw("failed to load config", "error", err)
-	}
+	logger := unsugared.Sugar()
 
 	ctx := context.Background()
 
 	app.Run(ctx, cfg, logger)
 }
 
-func createLogger() (*zap.SugaredLogger, error) {
-	logger, err := zap.NewProduction()
+func createLogger(cfg *config.Config) (logger *zap.Logger, err error) {
+	if cfg.Development {
+		logger, err = zap.NewDevelopment()
+	} else {
+		logger, err = zap.NewProduction()
+	}
 	if err != nil {
 		return nil, err
 	}
-	return logger.Sugar(), nil
+	return logger, nil
 }
