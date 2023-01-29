@@ -31,14 +31,14 @@ func (r *Role) ToProto() *protoModel.Role {
 }
 
 type PermissionNode struct {
-	Node            string                                    `bson:"node" ,json:"node"`
-	PermissionState protoModel.PermissionNode_PermissionState `bson:"permissionState" ,json:"permissionState"`
+	Node  string                                    `bson:"node" ,json:"node"`
+	State protoModel.PermissionNode_PermissionState `bson:"permissionState" ,json:"permissionState"`
 }
 
 func (p *PermissionNode) ToProto() *protoModel.PermissionNode {
 	return &protoModel.PermissionNode{
 		Node:  p.Node,
-		State: p.PermissionState,
+		State: p.State,
 	}
 }
 

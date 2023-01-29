@@ -35,6 +35,10 @@ func (s *permissionService) GetAllRoles(ctx context.Context, _ *permission.GetAl
 		return nil, err
 	}
 
+	if roles == nil {
+		return &permission.GetAllRolesResponse{}, nil
+	}
+
 	var protoRoles = make([]*protoModel.Role, len(roles))
 	for i, role := range roles {
 		protoRoles[i] = role.ToProto()
@@ -71,12 +75,18 @@ func (s *permissionService) CreateRole(ctx context.Context, req *permission.Role
 
 	err := s.repo.CreateRole(ctx, role)
 
-	go func() {
-		err := s.notif.RoleUpdate(ctx, role, permission2.RoleUpdateMessage_CREATE)
-		if err != nil {
-			zap.S().Errorw("error sending role update notification", "error", err)
+	if err != nil {
+		if mongoDb.IsDuplicateKeyError(err) {
+			return nil, status.Error(codes.AlreadyExists, "role already exists")
 		}
-	}()
+		zap.S().Errorw("error creating role", "error", err)
+		return nil, err
+	}
+
+	err = s.notif.RoleUpdate(ctx, role, permission2.RoleUpdateMessage_CREATE)
+	if err != nil {
+		zap.S().Errorw("error sending role update notification", "error", err)
+	}
 
 	return &permission.CreateRoleResponse{
 		Role: role.ToProto(),
@@ -112,8 +122,19 @@ func (s *permissionService) UpdateRole(ctx context.Context, req *permission.Role
 		}
 	}
 
+	// Update the permission state if it already exists, otherwise add it
 	for _, perm := range req.SetPermissions {
-		role.Permissions = append(role.Permissions, model.PermissionNode{Node: perm.Node, PermissionState: perm.State})
+		existed := false
+		for i, node := range role.Permissions {
+			if node.Node == perm.Node {
+				role.Permissions[i].State = perm.State
+				existed = true
+				continue
+			}
+		}
+		if !existed {
+			role.Permissions = append(role.Permissions, model.PermissionNode{Node: perm.Node, State: perm.State})
+		}
 	}
 
 	err = s.repo.UpdateRole(ctx, role)
@@ -123,12 +144,10 @@ func (s *permissionService) UpdateRole(ctx context.Context, req *permission.Role
 		return nil, err
 	}
 
-	go func() {
-		err := s.notif.RoleUpdate(ctx, role, permission2.RoleUpdateMessage_MODIFY)
-		if err != nil {
-			zap.S().Errorw("error sending role update notification", "error", err)
-		}
-	}()
+	err = s.notif.RoleUpdate(ctx, role, permission2.RoleUpdateMessage_MODIFY)
+	if err != nil {
+		zap.S().Errorw("error sending role update notification", "error", err)
+	}
 
 	return &permission.UpdateRoleResponse{
 		Role: role.ToProto(),
@@ -154,12 +173,9 @@ func (s *permissionService) AddRoleToPlayer(ctx context.Context, req *permission
 
 	err = s.repo.AddRoleToPlayer(ctx, pId, req.RoleId)
 
+	// NOTE: err no documents should never be thrown here because if so, we create a new player with role + default role
 	if err != nil {
-		if err == mongoDb.ErrNoDocuments {
-			st := status.New(codes.NotFound, "player not found")
-			st, _ = st.WithDetails(&permission.AddRoleToPlayerError{ErrorType: permission.AddRoleToPlayerError_PLAYER_NOT_FOUND})
-			return nil, st.Err()
-		} else if err == repository.AlreadyHasRoleError {
+		if err == repository.AlreadyHasRoleError {
 			st := status.New(codes.AlreadyExists, "player already has role")
 			st, _ = st.WithDetails(&permission.AddRoleToPlayerError{ErrorType: permission.AddRoleToPlayerError_ALREADY_HAS_ROLE})
 			return nil, st.Err()
@@ -167,12 +183,10 @@ func (s *permissionService) AddRoleToPlayer(ctx context.Context, req *permission
 		return nil, err
 	}
 
-	go func() {
-		err := s.notif.PlayerRolesUpdate(ctx, pId.String(), req.RoleId, permission2.PlayerRolesUpdateMessage_ADD)
-		if err != nil {
-			zap.S().Errorw("error sending player roles update", "error", err)
-		}
-	}()
+	err = s.notif.PlayerRolesUpdate(ctx, pId.String(), req.RoleId, permission2.PlayerRolesUpdateMessage_ADD)
+	if err != nil {
+		zap.S().Errorw("error sending player roles update", "error", err)
+	}
 
 	return &permission.AddRoleToPlayerResponse{}, nil
 }
@@ -197,12 +211,10 @@ func (s *permissionService) RemoveRoleFromPlayer(ctx context.Context, req *permi
 		return nil, err
 	}
 
-	go func() {
-		err := s.notif.PlayerRolesUpdate(ctx, pId.String(), req.RoleId, permission2.PlayerRolesUpdateMessage_REMOVE)
-		if err != nil {
-			zap.S().Errorw("error sending player roles update", "error", err)
-		}
-	}()
+	err = s.notif.PlayerRolesUpdate(ctx, pId.String(), req.RoleId, permission2.PlayerRolesUpdateMessage_REMOVE)
+	if err != nil {
+		zap.S().Errorw("error sending player roles update", "error", err)
+	}
 
 	return &permission.RemoveRoleFromPlayerResponse{}, nil
 }

@@ -85,7 +85,7 @@ func TestMain(m *testing.M) {
 		log.Fatalf("could not purge resource: %s", err)
 	}
 
-	if err = dbClient.Disconnect(context.TODO()); err != nil {
+	if err = dbClient.Disconnect(context.Background()); err != nil {
 		log.Panicf("could not disconnect from mongo: %s", err)
 	}
 
@@ -95,12 +95,12 @@ func TestMain(m *testing.M) {
 var testRole = model.Role{
 	Id:            "test1",
 	Priority:      10,
-	DisplayPrefix: stringPointer("testPrefix"),
-	DisplayName:   stringPointer("testName"),
+	DisplayPrefix: pointer("testPrefix"),
+	DisplayName:   pointer("testName"),
 	Permissions: []model.PermissionNode{
 		{
-			Node:            "test1",
-			PermissionState: permission.PermissionNode_DENY,
+			Node:  "test1",
+			State: permission.PermissionNode_DENY,
 		},
 	},
 }
@@ -111,15 +111,13 @@ var testMinimumRole = model.Role{
 	Priority: 10,
 	Permissions: []model.PermissionNode{
 		{
-			Node:            "test2",
-			PermissionState: permission.PermissionNode_ALLOW,
+			Node:  "test2",
+			State: permission.PermissionNode_ALLOW,
 		},
 	},
 }
 
-var (
-	testUserIds = []uuid.UUID{uuid.New(), uuid.New(), uuid.New()}
-)
+var testUserIds = []uuid.UUID{uuid.New(), uuid.New(), uuid.New()}
 
 func TestMongoRepository_GetRoles(t *testing.T) {
 	// Setup
@@ -207,7 +205,14 @@ func TestMongoRepository_CreateRole(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, testRole, *role)
 
-	// Test that duplicates error, so no cleanup is done.
+	cleanup()
+
+	// Test that duplicate documents error
+	// Setup
+	_, err = database.Collection(roleCollectionName).InsertOne(context.Background(), testRole)
+	assert.NoError(t, err)
+
+	// Create a duplicate role
 	err = repo.CreateRole(context.Background(), &testRole)
 	dupeErr := mongoDb.IsDuplicateKeyError(err)
 	assert.True(t, dupeErr)
@@ -254,7 +259,7 @@ func TestMongoRepository_GetPlayerRoleIds(t *testing.T) {
 	cleanup()
 
 	_, err = database.Collection(playerCollectionName).InsertOne(context.Background(), model.Player{
-		Id: testUserIds[1],
+		Id:    testUserIds[1],
 		Roles: []string{"default", "test1"},
 	})
 	assert.NoError(t, err)
@@ -284,7 +289,7 @@ func TestMongoRepository_AddRoleToPlayer(t *testing.T) {
 	cleanup()
 
 	_, err = database.Collection(playerCollectionName).InsertOne(context.Background(), model.Player{
-		Id: testUserIds[0],
+		Id:    testUserIds[0],
 		Roles: []string{model.DefaultRoleId},
 	})
 	assert.NoError(t, err)
@@ -307,6 +312,21 @@ func TestMongoRepository_AddRoleToPlayer(t *testing.T) {
 	cleanup()
 }
 
+// Test when user doesn't yet exist
+func TestMongoRepository_AddRoleToPlayer2(t *testing.T) {
+	err := repo.AddRoleToPlayer(context.Background(), testUserIds[0], testRole.Id)
+	assert.NoError(t, err)
+
+	// Verify
+	roleIds, err := repo.GetPlayerRoleIds(context.Background(), testUserIds[0])
+	assert.NoError(t, err)
+	assert.Len(t, roleIds, 2)
+	assert.Contains(t, roleIds, model.DefaultRoleId)
+	assert.Contains(t, roleIds, testRole.Id)
+
+	cleanup()
+}
+
 func TestMongoRepository_RemoveRoleFromPlayer(t *testing.T) {
 	// Test when the user does not exist. DoesNotHaveRoleError should be returned.
 	err := repo.RemoveRoleFromPlayer(context.Background(), testUserIds[0], testRole.Id)
@@ -314,7 +334,7 @@ func TestMongoRepository_RemoveRoleFromPlayer(t *testing.T) {
 
 	// Test a valid case with a default user
 	_, err = database.Collection(playerCollectionName).InsertOne(context.Background(), model.Player{
-		Id: testUserIds[0],
+		Id:    testUserIds[0],
 		Roles: []string{model.DefaultRoleId, testRole.Id},
 	})
 	assert.NoError(t, err)
@@ -332,7 +352,7 @@ func TestMongoRepository_RemoveRoleFromPlayer(t *testing.T) {
 
 	// Test with an existing user that has only the default role
 	_, err = database.Collection(playerCollectionName).InsertOne(context.Background(), model.Player{
-		Id: testUserIds[0],
+		Id:    testUserIds[0],
 		Roles: []string{model.DefaultRoleId},
 	})
 	assert.NoError(t, err)
@@ -349,6 +369,6 @@ func cleanup() {
 	}
 }
 
-func stringPointer(s string) *string {
-	return &s
+func pointer[T any](t T) *T {
+	return &t
 }

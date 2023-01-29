@@ -21,8 +21,8 @@ var roleTests = []roleTest{
 			DisplayName:   stringPointer("testName"),
 			Permissions: []PermissionNode{
 				{
-					Node:            "testNode",
-					PermissionState: protoModel.PermissionNode_ALLOW,
+					Node:  "testNode",
+					State: protoModel.PermissionNode_ALLOW,
 				},
 			},
 		},
@@ -47,12 +47,12 @@ var roleTests = []roleTest{
 			DisplayName:   nil,
 			Permissions: []PermissionNode{
 				{
-					Node:            "testNode",
-					PermissionState: protoModel.PermissionNode_DENY,
+					Node:  "testNode",
+					State: protoModel.PermissionNode_DENY,
 				},
 				{
-					Node:            "testNode2",
-					PermissionState: protoModel.PermissionNode_ALLOW,
+					Node:  "testNode2",
+					State: protoModel.PermissionNode_ALLOW,
 				},
 			},
 		},
@@ -94,8 +94,8 @@ type permissionNodeTest struct {
 var permissionNodeTests = []permissionNodeTest{
 	{
 		input: &PermissionNode{
-			Node:            "testNodeAllow",
-			PermissionState: protoModel.PermissionNode_ALLOW,
+			Node:  "testNodeAllow",
+			State: protoModel.PermissionNode_ALLOW,
 		},
 		expected: &protoModel.PermissionNode{
 			Node:  "testNodeAllow",
@@ -104,8 +104,8 @@ var permissionNodeTests = []permissionNodeTest{
 	},
 	{
 		input: &PermissionNode{
-			Node:            "testNodeDeny",
-			PermissionState: protoModel.PermissionNode_DENY,
+			Node:  "testNodeDeny",
+			State: protoModel.PermissionNode_DENY,
 		},
 		expected: &protoModel.PermissionNode{
 			Node:  "testNodeDeny",
