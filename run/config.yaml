@@ -2,8 +2,8 @@ development: true
 
 rabbitmq:
   host: localhost
-  username: dev
-  password: password
+  username: guest
+  password: guest
 
 mongodb:
   uri: mongodb://localhost:27017

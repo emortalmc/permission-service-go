@@ -40,7 +40,7 @@ func (r *rabbitMqNotifier) RoleUpdate(ctx context.Context, role *model.Role, cha
 		protoRole = role.ToProto()
 	}
 	roleUpdateMessage := permission.RoleUpdateMessage{
-		Role:    protoRole,
+		Role:       protoRole,
 		ChangeType: changeType,
 	}
 
@@ -64,13 +64,13 @@ func (r *rabbitMqNotifier) RoleUpdate(ctx context.Context, role *model.Role, cha
 }
 
 func (r *rabbitMqNotifier) PlayerRolesUpdate(ctx context.Context, playerId string, roleId string, changeType permission.PlayerRolesUpdateMessage_ChangeType) error {
-	playerRolesUpdateMessage := permission.PlayerRolesUpdateMessage{
-		PlayerId: playerId,
-		RoleId: roleId,
+	msg := permission.PlayerRolesUpdateMessage{
+		PlayerId:   playerId,
+		RoleId:     roleId,
 		ChangeType: changeType,
 	}
 
-	bytes, err := proto.Marshal(&playerRolesUpdateMessage)
+	bytes, err := proto.Marshal(&msg)
 	if err != nil {
 		return err
 	}
@@ -85,6 +85,7 @@ func (r *rabbitMqNotifier) PlayerRolesUpdate(ctx context.Context, playerId strin
 		false,
 		amqp.Publishing{
 			ContentType: "application/x-protobuf",
+			Type:        string(msg.ProtoReflect().Descriptor().FullName()),
 			Body:        bytes,
 		})
 }

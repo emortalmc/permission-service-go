@@ -10,5 +10,8 @@ RUN go build -o server-discovery ./cmd
 
 FROM alpine
 
-COPY --from=go /app/server-discovery /app/server-discovery
-CMD ["/app/server-discovery"]
+WORKDIR /app
+
+COPY --from=go /app/server-discovery ./server-discovery
+COPY run/config.yaml ./config.yaml
+CMD ["./server-discovery"]
