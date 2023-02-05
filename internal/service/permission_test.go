@@ -555,11 +555,3 @@ func createPartialGenericRole() *model.Role {
 		},
 	}
 }
-
-var mongoDupeErr = mongo.WriteException{
-	WriteErrors: []mongo.WriteError{
-		{
-			Code: 11000,
-		},
-	},
-}
