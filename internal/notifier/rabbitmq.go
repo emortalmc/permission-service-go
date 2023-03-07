@@ -9,12 +9,15 @@ import (
 	"google.golang.org/protobuf/proto"
 	"permission-service-go/internal/config"
 	"permission-service-go/internal/repository/model"
+	"time"
 )
 
 const rabbitMqUriFormat = "amqp://%s:%s@%s:5672"
+const exchange = "permission-manager"
 
 type rabbitMqNotifier struct {
 	Notifier
+
 	channel *amqp.Channel
 }
 
@@ -39,12 +42,13 @@ func (r *rabbitMqNotifier) RoleUpdate(ctx context.Context, role *model.Role, cha
 	if role != nil {
 		protoRole = role.ToProto()
 	}
-	roleUpdateMessage := permission.RoleUpdateMessage{
+
+	msg := permission.RoleUpdateMessage{
 		Role:       protoRole,
 		ChangeType: changeType,
 	}
 
-	bytes, err := proto.Marshal(&roleUpdateMessage)
+	bytes, err := proto.Marshal(&msg)
 	if err != nil {
 		return err
 	}
@@ -52,15 +56,12 @@ func (r *rabbitMqNotifier) RoleUpdate(ctx context.Context, role *model.Role, cha
 	ctx, cancel := context.WithTimeout(ctx, 5)
 	defer cancel()
 
-	return r.channel.PublishWithContext(ctx,
-		"mc:gameserver:all",
-		"",
-		false,
-		false,
-		amqp.Publishing{
-			ContentType: "application/x-protobuf",
-			Body:        bytes,
-		})
+	return r.channel.PublishWithContext(ctx, exchange, "role_update", false, false, amqp.Publishing{
+		ContentType: "application/x-protobuf",
+		Timestamp:   time.Now(),
+		Type:        string(msg.ProtoReflect().Descriptor().FullName()),
+		Body:        bytes,
+	})
 }
 
 func (r *rabbitMqNotifier) PlayerRolesUpdate(ctx context.Context, playerId string, roleId string, changeType permission.PlayerRolesUpdateMessage_ChangeType) error {
@@ -78,14 +79,10 @@ func (r *rabbitMqNotifier) PlayerRolesUpdate(ctx context.Context, playerId strin
 	ctx, cancel := context.WithTimeout(ctx, 5)
 	defer cancel()
 
-	return r.channel.PublishWithContext(ctx,
-		"mc:gameserver:all",
-		"",
-		false,
-		false,
-		amqp.Publishing{
-			ContentType: "application/x-protobuf",
-			Type:        string(msg.ProtoReflect().Descriptor().FullName()),
-			Body:        bytes,
-		})
+	return r.channel.PublishWithContext(ctx, exchange, "player_role_update", false, false, amqp.Publishing{
+		ContentType: "application/x-protobuf",
+		Timestamp:   time.Now(),
+		Type:        string(msg.ProtoReflect().Descriptor().FullName()),
+		Body:        bytes,
+	})
 }

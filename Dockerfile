@@ -1,17 +1,25 @@
-FROM golang:alpine as go
-WORKDIR /app
-ENV GO111MODULE=on
+FROM --platform=$BUILDPLATFORM golang:1.20 AS build
 
-COPY go.mod .
+WORKDIR /app
+
+## Copy go.mod and go.sum files, download dependencies so they are cached
+COPY go.mod go.sum ./
 RUN go mod download
 
-COPY . .
-RUN go build -o server-discovery ./cmd
+# Copy sources
+COPY cmd ./cmd
+COPY internal ./internal
 
-FROM alpine
+ARG TARGETOS
+ARG TARGETARCH
+
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
+    go build -ldflags="-s -w" -o party-manager ./cmd
+
+FROM --platform=$BUILDPLATFORM alpine:3.17 AS app
 
 WORKDIR /app
 
-COPY --from=go /app/server-discovery ./server-discovery
+COPY --from=build /app/permission-service ./permission-service
 COPY run/config.yaml ./config.yaml
-CMD ["./server-discovery"]
+CMD ["./party-manager"]
