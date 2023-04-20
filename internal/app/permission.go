@@ -8,7 +8,7 @@ import (
 	"google.golang.org/grpc"
 	"net"
 	"permission-service-go/internal/config"
-	"permission-service-go/internal/notifier"
+	"permission-service-go/internal/messaging/notifier"
 	"permission-service-go/internal/repository"
 	"permission-service-go/internal/service"
 )
@@ -19,10 +19,7 @@ func Run(ctx context.Context, cfg *config.Config, logger *zap.SugaredLogger) {
 		logger.Fatalw("failed to create repository", "error", err)
 	}
 
-	notif, err := notifier.NewRabbitMqNotifier(cfg.RabbitMQ)
-	if err != nil {
-		logger.Fatalw("failed to create notifier", "error", err)
-	}
+	notif := notifier.NewKafkaNotifier(logger, cfg.Kafka)
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.Port))
 	if err != nil {

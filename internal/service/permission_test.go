@@ -11,7 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"permission-service-go/internal/notifier"
+	"permission-service-go/internal/messaging/notifier"
 	"permission-service-go/internal/repository"
 	"permission-service-go/internal/repository/model"
 	"permission-service-go/internal/utils"
@@ -306,7 +306,7 @@ var updateRoleTests = map[string]updateRoleTest{
 		mockReq: &permService.RoleUpdateRequest{
 			Id:               "test-role",
 			Priority:         utils.PointerOf(uint32(10000)),
-			DisplayName:      utils.PointerOf("<rainbow><username><\\rainbow>"),
+			DisplayName:      utils.PointerOf("<rainbow>{{.Username }}<rainbow>"),
 			UnsetPermissions: []string{"test.permission2"},
 			SetPermissions: []*protoModel.PermissionNode{
 				{
@@ -323,7 +323,7 @@ var updateRoleTests = map[string]updateRoleTest{
 		expectedUpdatedDbRole: &model.Role{
 			Id:          "test-role",
 			Priority:    10000,
-			DisplayName: utils.PointerOf("<rainbow><username><\\rainbow>"),
+			DisplayName: utils.PointerOf("<rainbow>{{.Username }}<rainbow>"),
 			Permissions: []model.PermissionNode{
 				{
 					Node:  "test.permission",
@@ -346,7 +346,7 @@ var updateRoleTests = map[string]updateRoleTest{
 			Role: &protoModel.Role{
 				Id:          "test-role",
 				Priority:    10000,
-				DisplayName: utils.PointerOf("<rainbow><username><\\rainbow>"),
+				DisplayName: utils.PointerOf("<rainbow>{{.Username }}<rainbow>"),
 				Permissions: []*protoModel.PermissionNode{
 					{
 						Node:  "test.permission",

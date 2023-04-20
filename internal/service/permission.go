@@ -11,7 +11,7 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"permission-service-go/internal/notifier"
+	"permission-service-go/internal/messaging/notifier"
 	"permission-service-go/internal/repository"
 	"permission-service-go/internal/repository/model"
 	"sort"
