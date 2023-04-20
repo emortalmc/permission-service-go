@@ -1,4 +1,4 @@
-module permission-service-go
+module permission-service
 
 go 1.20
 

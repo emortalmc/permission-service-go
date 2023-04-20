@@ -6,7 +6,7 @@ package notifier
 
 import (
 	context "context"
-	model "permission-service-go/internal/repository/model"
+	model "permission-service/internal/repository/model"
 	reflect "reflect"
 
 	permission "github.com/emortalmc/proto-specs/gen/go/message/permission"

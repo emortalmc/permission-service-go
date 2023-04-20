@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 	"github.com/google/uuid"
-	"permission-service-go/internal/repository/model"
+	"permission-service/internal/repository/model"
 )
 
 type Repository interface {

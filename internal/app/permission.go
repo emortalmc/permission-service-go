@@ -6,11 +6,12 @@ import (
 	"github.com/emortalmc/proto-specs/gen/go/grpc/permission"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 	"net"
-	"permission-service-go/internal/config"
-	"permission-service-go/internal/messaging/notifier"
-	"permission-service-go/internal/repository"
-	"permission-service-go/internal/service"
+	"permission-service/internal/config"
+	"permission-service/internal/messaging/notifier"
+	"permission-service/internal/repository"
+	"permission-service/internal/service"
 )
 
 func Run(ctx context.Context, cfg *config.Config, logger *zap.SugaredLogger) {
@@ -27,6 +28,11 @@ func Run(ctx context.Context, cfg *config.Config, logger *zap.SugaredLogger) {
 	}
 
 	s := grpc.NewServer()
+
+	if cfg.Development {
+		reflection.Register(s)
+	}
+
 	permission.RegisterPermissionServiceServer(s, service.NewPermissionService(repo, notif))
 	logger.Infow("listening on port", "port", cfg.Port)
 

@@ -14,9 +14,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
 	"os"
-	"permission-service-go/internal/config"
-	"permission-service-go/internal/repository/model"
-	"permission-service-go/internal/utils"
+	"permission-service/internal/config"
+	"permission-service/internal/repository/model"
+	"permission-service/internal/utils"
 	"testing"
 )
 
@@ -71,7 +71,7 @@ func TestMain(m *testing.M) {
 		}
 
 		// Ping was successful, let's create the mongo repo
-		repo, err = NewMongoRepository(context.Background(), config.MongoDBConfig{URI: uri})
+		repo, err = NewMongoRepository(context.Background(), &config.MongoDBConfig{URI: uri})
 		database = dbClient.Database(databaseName)
 		return
 	})

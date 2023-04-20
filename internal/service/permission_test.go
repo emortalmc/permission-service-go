@@ -11,10 +11,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"permission-service-go/internal/messaging/notifier"
-	"permission-service-go/internal/repository"
-	"permission-service-go/internal/repository/model"
-	"permission-service-go/internal/utils"
+	"permission-service/internal/messaging/notifier"
+	"permission-service/internal/repository"
+	"permission-service/internal/repository/model"
+	"permission-service/internal/utils"
 	"testing"
 )
 

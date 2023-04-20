@@ -4,7 +4,7 @@ import (
 	protoModel "github.com/emortalmc/proto-specs/gen/go/model/permission"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/proto"
-	"permission-service-go/internal/utils"
+	"permission-service/internal/utils"
 	"testing"
 )
 

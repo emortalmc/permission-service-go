@@ -8,9 +8,9 @@ import (
 	"go.mongodb.org/mongo-driver/bson/bsoncodec"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"permission-service-go/internal/config"
-	"permission-service-go/internal/repository/model"
-	"permission-service-go/internal/repository/registrytypes"
+	"permission-service/internal/config"
+	"permission-service/internal/repository/model"
+	"permission-service/internal/repository/registrytypes"
 	"time"
 )
 

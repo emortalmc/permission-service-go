@@ -8,8 +8,8 @@ import (
 	"github.com/segmentio/kafka-go"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
-	"permission-service-go/internal/config"
-	"permission-service-go/internal/repository/model"
+	"permission-service/internal/config"
+	"permission-service/internal/repository/model"
 )
 
 const topic = "permission-manager"

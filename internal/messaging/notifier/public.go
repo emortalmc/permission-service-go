@@ -3,7 +3,7 @@ package notifier
 import (
 	"context"
 	"github.com/emortalmc/proto-specs/gen/go/message/permission"
-	"permission-service-go/internal/repository/model"
+	"permission-service/internal/repository/model"
 )
 
 type Notifier interface {

@@ -4,8 +4,8 @@ import (
 	"context"
 	"go.uber.org/zap"
 	"log"
-	"permission-service-go/internal/app"
-	"permission-service-go/internal/config"
+	"permission-service/internal/app"
+	"permission-service/internal/config"
 )
 
 func main() {
