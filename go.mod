@@ -7,7 +7,6 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.3.0
 	github.com/ory/dockertest/v3 v3.9.1
-	github.com/rabbitmq/amqp091-go v1.6.0
 	github.com/spf13/viper v1.15.0
 	github.com/stretchr/testify v1.8.1
 	go.mongodb.org/mongo-driver v1.11.0
