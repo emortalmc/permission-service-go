@@ -18,7 +18,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=0 \
     GOOS=$TARGETOS \
     GOARCH=$TARGETARCH \
-    go build -ldflags="-s -w" -o permission-service ./cmd/permission-service
+    go build -ldflags="-s -w" -o permission-service ./cmd
 
 FROM alpine
 
