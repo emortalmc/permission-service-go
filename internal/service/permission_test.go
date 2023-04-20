@@ -14,6 +14,7 @@ import (
 	"permission-service-go/internal/notifier"
 	"permission-service-go/internal/repository"
 	"permission-service-go/internal/repository/model"
+	"permission-service-go/internal/utils"
 	"testing"
 )
 
@@ -25,7 +26,7 @@ func TestPermissionService_GetAllRoles(t *testing.T) {
 	mockRoles := []*model.Role{createGenericRole(), createPartialGenericRole()}
 	mockProtoRoles := []*protoModel.Role{createGenericRole().ToProto(), createPartialGenericRole().ToProto()}
 
-	mockRepo.EXPECT().GetRoles(context.Background()).Return(mockRoles, nil)
+	mockRepo.EXPECT().GetAllRoles(context.Background()).Return(mockRoles, nil)
 
 	svc := permissionService{
 		repo: mockRepo,
@@ -38,41 +39,101 @@ func TestPermissionService_GetAllRoles(t *testing.T) {
 	assert.Equal(t, expected, response)
 
 	// Test with no roles returned
-	mockRepo.EXPECT().GetRoles(context.Background()).Return(nil, nil)
+	mockRepo.EXPECT().GetAllRoles(context.Background()).Return(nil, nil)
 	response, err = svc.GetAllRoles(context.Background(), &permService.GetAllRolesRequest{})
 	assert.NoError(t, err)
 	assert.Equal(t, &permService.GetAllRolesResponse{}, response)
 }
 
 var testUserIds = []uuid.UUID{uuid.New(), uuid.New(), uuid.New()}
+var testRoles = []*model.Role{
+	{Id: "default", Priority: 100, DisplayName: utils.PointerOf("{{.Username }}"),
+		Permissions: []model.PermissionNode{{Node: "admin", State: protoModel.PermissionNode_DENY}}},
+	{Id: "admin", Priority: 50, DisplayName: utils.PointerOf("{{.Username }}"),
+		Permissions: []model.PermissionNode{{Node: "admin", State: protoModel.PermissionNode_ALLOW}}},
+}
 
 func TestPermissionService_GetPlayerRoles(t *testing.T) {
-	mockCntrl := gomock.NewController(t)
-	mockRepo := repository.NewMockRepository(mockCntrl)
+	tests := []struct {
+		name string
 
-	testRoleIds := []string{"default", "testRole"}
+		req *permService.GetPlayerRolesRequest
 
-	mockRepo.EXPECT().GetPlayerRoleIds(context.Background(), testUserIds[0]).Return(testRoleIds, nil)
+		getPlayerRolesDbReq uuid.UUID
+		getPlayerRolesDbResp []string
+		getPlayerRolesDbErr  error
 
-	svc := permissionService{
-		repo: mockRepo,
+		getAllRolesDbResp []*model.Role
+
+		want    *permService.PlayerRolesResponse
+		wantErr bool
+	}{
+		{
+			name: "success default role",
+			req: &permService.GetPlayerRolesRequest{
+				PlayerId: testUserIds[0].String(),
+			},
+			getPlayerRolesDbReq: testUserIds[0],
+			getPlayerRolesDbResp: []string{"default"},
+			getAllRolesDbResp:    testRoles,
+
+			want: &permService.PlayerRolesResponse{
+				RoleIds:                 []string{"default"},
+				ActiveDisplayNameRoleId: utils.PointerOf("default"),
+			},
+		},
+		{
+			name: "success admin role (active name priority)",
+			req: &permService.GetPlayerRolesRequest{
+				PlayerId: testUserIds[1].String(),
+			},
+			getPlayerRolesDbReq: testUserIds[1],
+			getPlayerRolesDbResp: []string{"default", "admin"},
+			getAllRolesDbResp:    testRoles,
+
+			want: &permService.PlayerRolesResponse{
+				RoleIds:                 []string{"default", "admin"},
+				ActiveDisplayNameRoleId: utils.PointerOf("admin"),
+			},
+		},
+		{
+			name: "success no roles",
+			req: &permService.GetPlayerRolesRequest{
+				PlayerId: testUserIds[2].String(),
+			},
+			getPlayerRolesDbReq: testUserIds[2],
+			getPlayerRolesDbResp: []string{},
+			getAllRolesDbResp:    testRoles,
+
+			want: &permService.PlayerRolesResponse{
+				RoleIds:                 []string{},
+				ActiveDisplayNameRoleId: nil,
+			},
+		},
 	}
 
-	response, err := svc.GetPlayerRoles(context.Background(), &permService.GetPlayerRolesRequest{
-		PlayerId: testUserIds[0].String(),
-	})
-	assert.NoError(t, err)
-	assert.Equal(t, response, &permService.PlayerRolesResponse{RoleIds: testRoleIds})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockCntrl := gomock.NewController(t)
+			mockRepo := repository.NewMockRepository(mockCntrl)
 
-	// Test with only default role
-	defaultTestRoleIds := []string{"default"}
+			mockRepo.EXPECT().GetPlayerRoleIds(context.Background(), tt.getPlayerRolesDbReq).Return(tt.getPlayerRolesDbResp, tt.getPlayerRolesDbErr)
+			mockRepo.EXPECT().GetAllRoles(context.Background()).Return(tt.getAllRolesDbResp, nil)
 
-	mockRepo.EXPECT().GetPlayerRoleIds(context.Background(), testUserIds[1]).Return(defaultTestRoleIds, nil)
-	response, err = svc.GetPlayerRoles(context.Background(), &permService.GetPlayerRolesRequest{
-		PlayerId: testUserIds[1].String(),
-	})
-	assert.NoError(t, err)
-	assert.Equal(t, response, &permService.PlayerRolesResponse{RoleIds: defaultTestRoleIds})
+			svc := permissionService{
+				repo: mockRepo,
+			}
+
+			got, err := svc.GetPlayerRoles(context.Background(), tt.req)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("permissionService.GetPlayerRoles() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !assert.Equal(t, got, tt.want) {
+				t.Errorf("permissionService.GetPlayerRoles() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
 
 func TestPermissionService_CreateRole(t *testing.T) {
@@ -93,10 +154,9 @@ func TestPermissionService_CreateRole(t *testing.T) {
 	}
 
 	response, err := svc.CreateRole(context.Background(), &permService.RoleCreateRequest{
-		Id:            role.Id,
-		Priority:      role.Priority,
-		DisplayName:   role.DisplayName,
-		DisplayPrefix: role.DisplayPrefix,
+		Id:          role.Id,
+		Priority:    role.Priority,
+		DisplayName: role.DisplayName,
 	})
 
 	assert.NoError(t, err)
@@ -123,10 +183,9 @@ func TestPermissionService_CreateRole2(t *testing.T) {
 	}
 
 	response, err := svc.CreateRole(context.Background(), &permService.RoleCreateRequest{
-		Id:            role.Id,
-		Priority:      role.Priority,
-		DisplayName:   role.DisplayName,
-		DisplayPrefix: role.DisplayPrefix,
+		Id:          role.Id,
+		Priority:    role.Priority,
+		DisplayName: role.DisplayName,
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, response, &permService.CreateRoleResponse{
@@ -161,10 +220,9 @@ func TestPermissionService_CreateRole3(t *testing.T) {
 	}
 
 	response, err := svc.CreateRole(context.Background(), &permService.RoleCreateRequest{
-		Id:            mockRole.Id,
-		Priority:      mockRole.Priority,
-		DisplayName:   mockRole.DisplayName,
-		DisplayPrefix: mockRole.DisplayPrefix,
+		Id:          mockRole.Id,
+		Priority:    mockRole.Priority,
+		DisplayName: mockRole.DisplayName,
 	})
 	assert.Error(t, err)
 	assert.True(t, status.Convert(err).Code() == codes.AlreadyExists)
@@ -198,38 +256,34 @@ var updateRoleTests = map[string]updateRoleTest{
 
 		mockReq: &permService.RoleUpdateRequest{
 			Id:               createGenericRole().Id,
-			Priority:         pointer(uint32(10000)),
-			DisplayName:      pointer("new display name"),
-			DisplayPrefix:    pointer("new display prefix"),
+			Priority:         utils.PointerOf(uint32(10000)),
+			DisplayName:      utils.PointerOf("new display name"),
 			UnsetPermissions: []string{""},
 		},
 
 		expectedUpdatedDbRole: &model.Role{
-			Id:            createGenericRole().Id,
-			Priority:      10000,
-			DisplayName:   pointer("new display name"),
-			DisplayPrefix: pointer("new display prefix"),
-			Permissions:   createGenericRole().Permissions,
+			Id:          createGenericRole().Id,
+			Priority:    10000,
+			DisplayName: utils.PointerOf("new display name"),
+			Permissions: createGenericRole().Permissions,
 		},
-		notifChangeType: pointer(permission.RoleUpdateMessage_MODIFY),
+		notifChangeType: utils.PointerOf(permission.RoleUpdateMessage_MODIFY),
 
 		expectedErr: nil,
 		expectedRes: &permService.UpdateRoleResponse{
 			Role: &protoModel.Role{
-				Id:            createGenericRole().Id,
-				Priority:      10000,
-				DisplayName:   pointer("new display name"),
-				DisplayPrefix: pointer("new display prefix"),
-				Permissions:   createGenericRole().ToProto().Permissions,
+				Id:          createGenericRole().Id,
+				Priority:    10000,
+				DisplayName: utils.PointerOf("new display name"),
+				Permissions: createGenericRole().ToProto().Permissions,
 			},
 		},
 	},
 	"successful update with changed permissions": {
 		dbRole: &model.Role{
-			Id:            "test-role",
-			Priority:      100,
-			DisplayName:   pointer("test role"),
-			DisplayPrefix: pointer("test"),
+			Id:          "test-role",
+			Priority:    100,
+			DisplayName: utils.PointerOf("test role"),
 			Permissions: []model.PermissionNode{
 				{
 					Node:  "test.permission",
@@ -251,9 +305,8 @@ var updateRoleTests = map[string]updateRoleTest{
 
 		mockReq: &permService.RoleUpdateRequest{
 			Id:               "test-role",
-			Priority:         pointer(uint32(10000)),
-			DisplayName:      pointer("<rainbow><username><\\rainbow>"),
-			DisplayPrefix:    pointer("<red><bold>"),
+			Priority:         utils.PointerOf(uint32(10000)),
+			DisplayName:      utils.PointerOf("<rainbow><username><\\rainbow>"),
 			UnsetPermissions: []string{"test.permission2"},
 			SetPermissions: []*protoModel.PermissionNode{
 				{
@@ -268,10 +321,9 @@ var updateRoleTests = map[string]updateRoleTest{
 		},
 
 		expectedUpdatedDbRole: &model.Role{
-			Id:            "test-role",
-			Priority:      10000,
-			DisplayName:   pointer("<rainbow><username><\\rainbow>"),
-			DisplayPrefix: pointer("<red><bold>"),
+			Id:          "test-role",
+			Priority:    10000,
+			DisplayName: utils.PointerOf("<rainbow><username><\\rainbow>"),
 			Permissions: []model.PermissionNode{
 				{
 					Node:  "test.permission",
@@ -287,15 +339,14 @@ var updateRoleTests = map[string]updateRoleTest{
 				},
 			},
 		},
-		notifChangeType: pointer(permission.RoleUpdateMessage_MODIFY),
+		notifChangeType: utils.PointerOf(permission.RoleUpdateMessage_MODIFY),
 
 		// TODO can we go over this. I think there's some verification with overwriting perms we're not doing
 		expectedRes: &permService.UpdateRoleResponse{
 			Role: &protoModel.Role{
-				Id:            "test-role",
-				Priority:      10000,
-				DisplayName:   pointer("<rainbow><username><\\rainbow>"),
-				DisplayPrefix: pointer("<red><bold>"),
+				Id:          "test-role",
+				Priority:    10000,
+				DisplayName: utils.PointerOf("<rainbow><username><\\rainbow>"),
 				Permissions: []*protoModel.PermissionNode{
 					{
 						Node:  "test.permission",
@@ -377,8 +428,8 @@ type addRoleToPlayerTest struct {
 
 var addRoleToPlayerTests = map[string]addRoleToPlayerTest{
 	"valid": {
-		roleExists: true,
-		addRoleErr: nil,
+		roleExists:  true,
+		addRoleErr:  nil,
 		expectedErr: nil,
 	},
 	"role_doesnt_exist": {
@@ -522,16 +573,11 @@ func TestPermissionService_RemoveRoleFromPlayer(t *testing.T) {
 	}
 }
 
-func pointer[T any](t T) *T {
-	return &t
-}
-
 func createGenericRole() *model.Role {
 	return &model.Role{
-		Id:            "1",
-		Priority:      1,
-		DisplayPrefix: pointer("testPrefix"),
-		DisplayName:   pointer("testName"),
+		Id:          "1",
+		Priority:    1,
+		DisplayName: utils.PointerOf("testName"),
 		Permissions: []model.PermissionNode{
 			{
 				Node:  "testNode",
@@ -543,10 +589,9 @@ func createGenericRole() *model.Role {
 
 func createPartialGenericRole() *model.Role {
 	return &model.Role{
-		Id:            "2",
-		Priority:      100,
-		DisplayPrefix: nil,
-		DisplayName:   nil,
+		Id:          "2",
+		Priority:    100,
+		DisplayName: nil,
 		Permissions: []model.PermissionNode{
 			{
 				Node:  "testNode",

@@ -7,7 +7,7 @@ import (
 )
 
 type Repository interface {
-	GetRoles(ctx context.Context) ([]*model.Role, error)
+	GetAllRoles(ctx context.Context) ([]*model.Role, error)
 	GetRole(ctx context.Context, roleId string) (*model.Role, error)
 	DoesRoleExist(ctx context.Context, roleId string) (bool, error)
 	CreateRole(ctx context.Context, role *model.Role) error

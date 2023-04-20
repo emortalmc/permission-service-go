@@ -16,6 +16,7 @@ import (
 	"os"
 	"permission-service-go/internal/config"
 	"permission-service-go/internal/repository/model"
+	"permission-service-go/internal/utils"
 	"testing"
 )
 
@@ -85,18 +86,13 @@ func TestMain(m *testing.M) {
 		log.Fatalf("could not purge resource: %s", err)
 	}
 
-	if err = dbClient.Disconnect(context.Background()); err != nil {
-		log.Panicf("could not disconnect from mongo: %s", err)
-	}
-
 	os.Exit(code)
 }
 
 var testRole = model.Role{
 	Id:            "test1",
 	Priority:      10,
-	DisplayPrefix: pointer("testPrefix"),
-	DisplayName:   pointer("testName"),
+	DisplayName:   utils.PointerOf("testName"),
 	Permissions: []model.PermissionNode{
 		{
 			Node:  "test1",
@@ -105,7 +101,7 @@ var testRole = model.Role{
 	},
 }
 
-// minimumRole doesn't include displayPrefix/displayName
+// minimumRole doesn't include displayName
 var testMinimumRole = model.Role{
 	Id:       "test2",
 	Priority: 10,
@@ -126,7 +122,7 @@ func TestMongoRepository_GetRoles(t *testing.T) {
 	assert.Len(t, many.InsertedIDs, 2)
 
 	// Test
-	roles, err := repo.GetRoles(context.Background())
+	roles, err := repo.GetAllRoles(context.Background())
 	assert.NoError(t, err)
 	assert.Len(t, roles, 2)
 	for _, role := range roles {
@@ -146,7 +142,7 @@ func TestMongoRepository_GetRoles(t *testing.T) {
 
 	cleanup()
 
-	roles, err = repo.GetRoles(context.Background())
+	roles, err = repo.GetAllRoles(context.Background())
 	assert.NoError(t, err)
 	assert.Len(t, roles, 0)
 }
@@ -367,8 +363,4 @@ func cleanup() {
 	if err := database.Drop(context.Background()); err != nil {
 		log.Panicf("could not drop database: %s", err)
 	}
-}
-
-func pointer[T any](t T) *T {
-	return &t
 }

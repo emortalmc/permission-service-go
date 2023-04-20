@@ -14,10 +14,12 @@ import (
 	"permission-service-go/internal/notifier"
 	"permission-service-go/internal/repository"
 	"permission-service-go/internal/repository/model"
+	"sort"
 )
 
 type permissionService struct {
-	permission.PermissionServiceServer
+	permission.UnimplementedPermissionServiceServer
+
 	repo  repository.Repository
 	notif notifier.Notifier
 }
@@ -30,7 +32,7 @@ func NewPermissionService(repo repository.Repository, notif notifier.Notifier) p
 }
 
 func (s *permissionService) GetAllRoles(ctx context.Context, _ *permission.GetAllRolesRequest) (*permission.GetAllRolesResponse, error) {
-	roles, err := s.repo.GetRoles(ctx)
+	roles, err := s.repo.GetAllRoles(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -59,18 +61,28 @@ func (s *permissionService) GetPlayerRoles(ctx context.Context, req *permission.
 		return nil, err
 	}
 
+	activeRole, err := s.computeActiveDisplayNameRole(ctx, roles)
+	if err != nil {
+		return nil, err
+	}
+
+	var activeRoleId *string
+	if activeRole != nil {
+		activeRoleId = &activeRole.Id
+	}
+
 	return &permission.PlayerRolesResponse{
-		RoleIds: roles,
+		RoleIds:                 roles,
+		ActiveDisplayNameRoleId: activeRoleId,
 	}, nil
 }
 
 func (s *permissionService) CreateRole(ctx context.Context, req *permission.RoleCreateRequest) (*permission.CreateRoleResponse, error) {
 	role := &model.Role{
-		Id:            req.Id,
-		Priority:      req.Priority,
-		DisplayPrefix: req.DisplayPrefix,
-		DisplayName:   req.DisplayName,
-		Permissions:   make([]model.PermissionNode, 0),
+		Id:          req.Id,
+		Priority:    req.Priority,
+		DisplayName: req.DisplayName,
+		Permissions: make([]model.PermissionNode, 0),
 	}
 
 	err := s.repo.CreateRole(ctx, role)
@@ -106,9 +118,6 @@ func (s *permissionService) UpdateRole(ctx context.Context, req *permission.Role
 
 	if req.Priority != nil {
 		role.Priority = *req.Priority
-	}
-	if req.DisplayPrefix != nil {
-		role.DisplayPrefix = req.DisplayPrefix
 	}
 	if req.DisplayName != nil {
 		role.DisplayName = req.DisplayName
@@ -217,4 +226,34 @@ func (s *permissionService) RemoveRoleFromPlayer(ctx context.Context, req *permi
 	}
 
 	return &permission.RemoveRoleFromPlayerResponse{}, nil
+}
+
+func (s *permissionService) computeActiveDisplayNameRole(ctx context.Context, roleIds []string) (*model.Role, error) {
+	allRoles, err := s.repo.GetAllRoles(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("error getting all roles: %w", err)
+	}
+
+	playerRoles := make([]*model.Role, 0)
+	for _, roleId := range roleIds {
+		for _, role := range allRoles {
+			if role.Id == roleId {
+				playerRoles = append(playerRoles, role)
+			}
+		}
+	}
+
+	// Sort roles by priority
+	sort.Slice(playerRoles, func(i, j int) bool {
+		return playerRoles[i].Priority < playerRoles[j].Priority
+	})
+
+	// Get the highest priority role with a display name
+	for _, role := range playerRoles {
+		if role.DisplayName != nil {
+			return role, nil
+		}
+	}
+
+	return nil, nil
 }

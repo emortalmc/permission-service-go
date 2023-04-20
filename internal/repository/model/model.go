@@ -10,7 +10,6 @@ const DefaultRoleId = "default"
 type Role struct {
 	Id            string           `bson:"_id" ,json:"id"`
 	Priority      uint32           `bson:"priority" ,json:"priority"`
-	DisplayPrefix *string          `bson:"displayPrefix" ,json:"displayPrefix"`
 	DisplayName   *string          `bson:"displayName" ,json:"displayName"`
 	Permissions   []PermissionNode `bson:"permissions" ,json:"permissions"`
 }
@@ -24,7 +23,6 @@ func (r *Role) ToProto() *protoModel.Role {
 	return &protoModel.Role{
 		Id:            r.Id,
 		Priority:      r.Priority,
-		DisplayPrefix: r.DisplayPrefix,
 		DisplayName:   r.DisplayName,
 		Permissions:   protoPermissions,
 	}

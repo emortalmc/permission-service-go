@@ -4,6 +4,7 @@ import (
 	protoModel "github.com/emortalmc/proto-specs/gen/go/model/permission"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/proto"
+	"permission-service-go/internal/utils"
 	"testing"
 )
 
@@ -17,8 +18,7 @@ var roleTests = []roleTest{
 		input: &Role{
 			Id:            "validTestOne",
 			Priority:      1,
-			DisplayPrefix: stringPointer("testPrefix"),
-			DisplayName:   stringPointer("testName"),
+			DisplayName:   utils.PointerOf("testName"),
 			Permissions: []PermissionNode{
 				{
 					Node:  "testNode",
@@ -29,8 +29,7 @@ var roleTests = []roleTest{
 		expected: &protoModel.Role{
 			Id:            "validTestOne",
 			Priority:      1,
-			DisplayPrefix: stringPointer("testPrefix"),
-			DisplayName:   stringPointer("testName"),
+			DisplayName:   utils.PointerOf("testName"),
 			Permissions: []*protoModel.PermissionNode{
 				{
 					Node:  "testNode",
@@ -43,7 +42,6 @@ var roleTests = []roleTest{
 		input: &Role{
 			Id:            "validTestTwo",
 			Priority:      100,
-			DisplayPrefix: nil,
 			DisplayName:   nil,
 			Permissions: []PermissionNode{
 				{
@@ -59,7 +57,6 @@ var roleTests = []roleTest{
 		expected: &protoModel.Role{
 			Id:            "validTestTwo",
 			Priority:      100,
-			DisplayPrefix: nil,
 			DisplayName:   nil,
 			Permissions: []*protoModel.PermissionNode{
 				{
@@ -121,8 +118,4 @@ func TestPermissionNode_ToProto(t *testing.T) {
 			assert.True(t, proto.Equal(converted, test.expected), "expected %s, got %s", test.expected, converted)
 		})
 	}
-}
-
-func stringPointer(s string) *string {
-	return &s
 }

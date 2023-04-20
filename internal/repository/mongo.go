@@ -47,7 +47,7 @@ func NewMongoRepository(ctx context.Context, cfg config.MongoDBConfig) (Reposito
 	}, nil
 }
 
-func (m *mongoRepository) GetRoles(ctx context.Context) ([]*model.Role, error) {
+func (m *mongoRepository) GetAllRoles(ctx context.Context) ([]*model.Role, error) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 

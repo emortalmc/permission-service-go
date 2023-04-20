@@ -79,6 +79,21 @@ func (mr *MockRepositoryMockRecorder) DoesRoleExist(ctx, roleId interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DoesRoleExist", reflect.TypeOf((*MockRepository)(nil).DoesRoleExist), ctx, roleId)
 }
 
+// GetAllRoles mocks base method.
+func (m *MockRepository) GetAllRoles(ctx context.Context) ([]*model.Role, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllRoles", ctx)
+	ret0, _ := ret[0].([]*model.Role)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllRoles indicates an expected call of GetAllRoles.
+func (mr *MockRepositoryMockRecorder) GetAllRoles(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllRoles", reflect.TypeOf((*MockRepository)(nil).GetAllRoles), ctx)
+}
+
 // GetPlayerRoleIds mocks base method.
 func (m *MockRepository) GetPlayerRoleIds(ctx context.Context, playerId uuid.UUID) ([]string, error) {
 	m.ctrl.T.Helper()
@@ -107,21 +122,6 @@ func (m *MockRepository) GetRole(ctx context.Context, roleId string) (*model.Rol
 func (mr *MockRepositoryMockRecorder) GetRole(ctx, roleId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRole", reflect.TypeOf((*MockRepository)(nil).GetRole), ctx, roleId)
-}
-
-// GetRoles mocks base method.
-func (m *MockRepository) GetRoles(ctx context.Context) ([]*model.Role, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRoles", ctx)
-	ret0, _ := ret[0].([]*model.Role)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetRoles indicates an expected call of GetRoles.
-func (mr *MockRepositoryMockRecorder) GetRoles(ctx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRoles", reflect.TypeOf((*MockRepository)(nil).GetRoles), ctx)
 }
 
 // RemoveRoleFromPlayer mocks base method.
