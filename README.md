@@ -1,5 +1,5 @@
-# permission-service-go
+# permission-service
 
 ## Requirements
   - MongoDB
-  - RabbitMQ
+  - Kafka
