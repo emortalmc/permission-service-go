@@ -244,8 +244,8 @@ func (s *permissionService) computeActiveDisplayNameRole(ctx context.Context, ro
 	}
 
 	// Sort roles by priority
-	sort.Slice(playerRoles, func(i, j int) bool {
-		return playerRoles[i].Priority < playerRoles[j].Priority
+	sort.SliceStable(playerRoles, func(i, j int) bool {
+		return playerRoles[i].Priority > playerRoles[j].Priority
 	})
 
 	// Get the highest priority role with a display name
