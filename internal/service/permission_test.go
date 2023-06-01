@@ -47,9 +47,9 @@ func TestPermissionService_GetAllRoles(t *testing.T) {
 
 var testUserIds = []uuid.UUID{uuid.New(), uuid.New(), uuid.New()}
 var testRoles = []*model.Role{
-	{Id: "default", Priority: 100, DisplayName: utils.PointerOf("{{.Username }}"),
+	{Id: "default", Priority: 50, DisplayName: utils.PointerOf("{{.Username }}"),
 		Permissions: []model.PermissionNode{{Node: "admin", State: protoModel.PermissionNode_DENY}}},
-	{Id: "admin", Priority: 50, DisplayName: utils.PointerOf("{{.Username }}"),
+	{Id: "admin", Priority: 100, DisplayName: utils.PointerOf("{{.Username }}"),
 		Permissions: []model.PermissionNode{{Node: "admin", State: protoModel.PermissionNode_ALLOW}}},
 }
 
@@ -59,7 +59,7 @@ func TestPermissionService_GetPlayerRoles(t *testing.T) {
 
 		req *permService.GetPlayerRolesRequest
 
-		getPlayerRolesDbReq uuid.UUID
+		getPlayerRolesDbReq  uuid.UUID
 		getPlayerRolesDbResp []string
 		getPlayerRolesDbErr  error
 
@@ -73,7 +73,7 @@ func TestPermissionService_GetPlayerRoles(t *testing.T) {
 			req: &permService.GetPlayerRolesRequest{
 				PlayerId: testUserIds[0].String(),
 			},
-			getPlayerRolesDbReq: testUserIds[0],
+			getPlayerRolesDbReq:  testUserIds[0],
 			getPlayerRolesDbResp: []string{"default"},
 			getAllRolesDbResp:    testRoles,
 
@@ -87,7 +87,7 @@ func TestPermissionService_GetPlayerRoles(t *testing.T) {
 			req: &permService.GetPlayerRolesRequest{
 				PlayerId: testUserIds[1].String(),
 			},
-			getPlayerRolesDbReq: testUserIds[1],
+			getPlayerRolesDbReq:  testUserIds[1],
 			getPlayerRolesDbResp: []string{"default", "admin"},
 			getAllRolesDbResp:    testRoles,
 
@@ -101,7 +101,7 @@ func TestPermissionService_GetPlayerRoles(t *testing.T) {
 			req: &permService.GetPlayerRolesRequest{
 				PlayerId: testUserIds[2].String(),
 			},
-			getPlayerRolesDbReq: testUserIds[2],
+			getPlayerRolesDbReq:  testUserIds[2],
 			getPlayerRolesDbResp: []string{},
 			getAllRolesDbResp:    testRoles,
 
@@ -129,7 +129,7 @@ func TestPermissionService_GetPlayerRoles(t *testing.T) {
 				t.Errorf("permissionService.GetPlayerRoles() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !assert.Equal(t, got, tt.want) {
+			if !assert.Equal(t, tt.want, got) {
 				t.Errorf("permissionService.GetPlayerRoles() = %v, want %v", got, tt.want)
 			}
 		})
@@ -568,6 +568,60 @@ func TestPermissionService_RemoveRoleFromPlayer(t *testing.T) {
 				test.expectedErr(t, err)
 			} else {
 				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestPermissionService_computeActiveDisplayNameRole(t *testing.T) {
+	tests := []struct {
+		name string
+
+		testRoleIds []string
+		dbRoles     []*model.Role
+		want        *model.Role
+	}{
+		{
+			name:        "valid",
+			testRoleIds: []string{"default", "owner"},
+			dbRoles: []*model.Role{
+				{Id: "default", Priority: 1, DisplayName: utils.PointerOf("displayName")},
+				{Id: "owner", Priority: 2, DisplayName: utils.PointerOf("displayName")},
+			},
+			want: &model.Role{Id: "owner", Priority: 2},
+		},
+		{
+			name:        "valid_missing_display_name",
+			testRoleIds: []string{"default", "owner", "default_no_display_name"},
+			dbRoles: []*model.Role{
+				{Id: "default", Priority: 1, DisplayName: utils.PointerOf("displayName")},
+				{Id: "owner", Priority: 2, DisplayName: utils.PointerOf("displayName")},
+				{Id: "default_no_display_name", Priority: 3},
+			},
+			want: &model.Role{Id: "owner", Priority: 2},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockCtrl := gomock.NewController(t)
+			defer mockCtrl.Finish()
+
+			ctx := context.Background()
+
+			mockRepo := repository.NewMockRepository(mockCtrl)
+			mockRepo.EXPECT().GetAllRoles(ctx).Return(tt.dbRoles, nil)
+
+			svc := &permissionService{
+				repo: mockRepo,
+			}
+
+			if got, err := svc.computeActiveDisplayNameRole(ctx, tt.testRoleIds); err != nil {
+				t.Errorf("computeActiveDisplayNameRole() error = %v", err)
+			} else if got == nil {
+				t.Errorf("computeActiveDisplayNameRole() = %v, want %v", got, tt.want)
+			} else if got.Id != tt.want.Id {
+				t.Errorf("computeActiveDisplayNameRole() = %v, want %v", got, tt.want)
 			}
 		})
 	}

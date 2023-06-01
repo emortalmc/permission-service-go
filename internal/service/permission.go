@@ -24,7 +24,7 @@ type permissionService struct {
 	notif notifier.Notifier
 }
 
-func NewPermissionService(repo repository.Repository, notif notifier.Notifier) permission.PermissionServiceServer {
+func newPermissionService(repo repository.Repository, notif notifier.Notifier) permission.PermissionServiceServer {
 	return &permissionService{
 		repo:  repo,
 		notif: notif,
@@ -200,6 +200,14 @@ func (s *permissionService) AddRoleToPlayer(ctx context.Context, req *permission
 	return &permission.AddRoleToPlayerResponse{}, nil
 }
 
+var (
+	removeRoleFromPlayerPlayerNotFound = panicIfErr(status.New(codes.NotFound, "player not found").
+						WithDetails(&permission.RemoveRoleFromPlayerError{ErrorType: permission.RemoveRoleFromPlayerError_PLAYER_NOT_FOUND})).Err()
+
+	removeRoleFromPlayerDoesntHaveRole = panicIfErr(status.New(codes.NotFound, "player does not have role").
+						WithDetails(&permission.RemoveRoleFromPlayerError{ErrorType: permission.RemoveRoleFromPlayerError_DOES_NOT_HAVE_ROLE})).Err()
+)
+
 func (s *permissionService) RemoveRoleFromPlayer(ctx context.Context, req *permission.RemoveRoleFromPlayerRequest) (*permission.RemoveRoleFromPlayerResponse, error) {
 	pId, err := uuid.Parse(req.PlayerId)
 	if err != nil {
@@ -209,13 +217,9 @@ func (s *permissionService) RemoveRoleFromPlayer(ctx context.Context, req *permi
 	err = s.repo.RemoveRoleFromPlayer(ctx, pId, req.RoleId)
 	if err != nil {
 		if err == mongoDb.ErrNoDocuments {
-			st := status.New(codes.NotFound, "player not found")
-			st, _ = st.WithDetails(&permission.RemoveRoleFromPlayerError{ErrorType: permission.RemoveRoleFromPlayerError_PLAYER_NOT_FOUND})
-			return nil, st.Err()
+			return nil, removeRoleFromPlayerPlayerNotFound
 		} else if err == repository.DoesNotHaveRoleError {
-			st := status.New(codes.NotFound, "player does not have role")
-			st, _ = st.WithDetails(&permission.RemoveRoleFromPlayerError{ErrorType: permission.RemoveRoleFromPlayerError_DOES_NOT_HAVE_ROLE})
-			return nil, st.Err()
+			return nil, removeRoleFromPlayerDoesntHaveRole
 		}
 		return nil, err
 	}
@@ -256,4 +260,11 @@ func (s *permissionService) computeActiveDisplayNameRole(ctx context.Context, ro
 	}
 
 	return nil, nil
+}
+
+func panicIfErr[T any](thing T, err error) T {
+	if err != nil {
+		panic(err)
+	}
+	return thing
 }

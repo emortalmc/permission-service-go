@@ -10,6 +10,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"permission-service/internal/config"
 	"permission-service/internal/repository/model"
+	"sync"
 )
 
 const topic = "permission-manager"
@@ -19,7 +20,7 @@ type kafkaNotifier struct {
 	w      *kafka.Writer
 }
 
-func NewKafkaNotifier(logger *zap.SugaredLogger, cfg *config.KafkaConfig) Notifier {
+func NewKafkaNotifier(ctx context.Context, wg *sync.WaitGroup, logger *zap.SugaredLogger, cfg *config.KafkaConfig) Notifier {
 	w := &kafka.Writer{
 		Addr:        kafka.TCP(fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)),
 		Topic:       topic,
@@ -28,9 +29,18 @@ func NewKafkaNotifier(logger *zap.SugaredLogger, cfg *config.KafkaConfig) Notifi
 		ErrorLogger: zap.NewStdLog(zap.L()),
 	}
 
+	go func() {
+		defer wg.Done()
+		<-ctx.Done()
+		logger.Info("shutting down kafka writer")
+		if err := w.Close(); err != nil {
+			logger.Errorw("failed to close kafka writer", "error", err)
+		}
+	}()
+
 	return &kafkaNotifier{
 		logger: logger,
-		w: w,
+		w:      w,
 	}
 }
 
@@ -72,4 +82,3 @@ func (k *kafkaNotifier) publishMessage(ctx context.Context, message proto.Messag
 
 	return nil
 }
-

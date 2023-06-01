@@ -2,43 +2,35 @@ package app
 
 import (
 	"context"
-	"fmt"
-	"github.com/emortalmc/proto-specs/gen/go/grpc/permission"
 	"go.uber.org/zap"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
-	"net"
 	"permission-service/internal/config"
 	"permission-service/internal/messaging/notifier"
 	"permission-service/internal/repository"
 	"permission-service/internal/service"
+	"sync"
 )
 
-func Run(ctx context.Context, cfg *config.Config, logger *zap.SugaredLogger) {
-	repo, err := repository.NewMongoRepository(ctx, cfg.MongoDB)
+func Run(cfg *config.Config, logger *zap.SugaredLogger) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	wg := &sync.WaitGroup{}
+
+	delayedCtx, repoCancel := context.WithCancel(ctx)
+	delayedWg := &sync.WaitGroup{}
+
+	repo, err := repository.NewMongoRepository(delayedCtx, logger, delayedWg, cfg.MongoDB)
 	if err != nil {
 		logger.Fatalw("failed to create repository", "error", err)
 	}
 
-	notif := notifier.NewKafkaNotifier(logger, cfg.Kafka)
+	notif := notifier.NewKafkaNotifier(delayedCtx, delayedWg, logger, cfg.Kafka)
 
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.Port))
-	if err != nil {
-		logger.Fatalw("failed to listen", "error", err)
-	}
+	service.RunServices(ctx, logger, wg, cfg, repo, notif)
 
-	s := grpc.NewServer()
+	wg.Wait()
+	logger.Info("shutting down")
 
-	if cfg.Development {
-		reflection.Register(s)
-	}
-
-	permission.RegisterPermissionServiceServer(s, service.NewPermissionService(repo, notif))
-	logger.Infow("listening on port", "port", cfg.Port)
-
-	err = s.Serve(lis)
-	if err != nil {
-		logger.Fatalw("failed to serve", "error", err)
-		return
-	}
+	logger.Info("shutting down delayed services")
+	repoCancel()
+	delayedWg.Wait()
 }

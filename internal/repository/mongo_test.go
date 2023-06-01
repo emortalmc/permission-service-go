@@ -12,11 +12,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	mongoDb "go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.uber.org/zap"
 	"log"
 	"os"
 	"permission-service/internal/config"
 	"permission-service/internal/repository/model"
 	"permission-service/internal/utils"
+	"sync"
 	"testing"
 )
 
@@ -70,8 +72,12 @@ func TestMain(m *testing.M) {
 			return
 		}
 
+		ctx := context.Background()
+		unsugared, _ := zap.NewDevelopment()
+		logger := unsugared.Sugar()
+
 		// Ping was successful, let's create the mongo repo
-		repo, err = NewMongoRepository(context.Background(), &config.MongoDBConfig{URI: uri})
+		repo, err = NewMongoRepository(ctx, logger, &sync.WaitGroup{}, &config.MongoDBConfig{URI: uri})
 		database = dbClient.Database(databaseName)
 		return
 	})
@@ -90,9 +96,9 @@ func TestMain(m *testing.M) {
 }
 
 var testRole = model.Role{
-	Id:            "test1",
-	Priority:      10,
-	DisplayName:   utils.PointerOf("testName"),
+	Id:          "test1",
+	Priority:    10,
+	DisplayName: utils.PointerOf("testName"),
 	Permissions: []model.PermissionNode{
 		{
 			Node:  "test1",
