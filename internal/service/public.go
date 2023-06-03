@@ -28,7 +28,7 @@ func RunServices(ctx context.Context, logger *zap.SugaredLogger, wg *sync.WaitGr
 		reflection.Register(s)
 	}
 
-	permission.RegisterPermissionServiceServer(s, newPermissionService(repo, notif))
+	permission.RegisterPermissionServiceServer(s, newPermissionService(logger, repo, notif))
 	logger.Infow("listening for gRPC requests", "port", cfg.Port)
 
 	go func() {
