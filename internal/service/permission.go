@@ -20,12 +20,16 @@ import (
 type permissionService struct {
 	permission.UnimplementedPermissionServiceServer
 
+	logger *zap.SugaredLogger
+
 	repo  repository.Repository
 	notif notifier.Notifier
 }
 
-func newPermissionService(repo repository.Repository, notif notifier.Notifier) permission.PermissionServiceServer {
+func newPermissionService(logger *zap.SugaredLogger, repo repository.Repository, notif notifier.Notifier) permission.PermissionServiceServer {
 	return &permissionService{
+		logger: logger,
+
 		repo:  repo,
 		notif: notif,
 	}
@@ -91,13 +95,11 @@ func (s *permissionService) CreateRole(ctx context.Context, req *permission.Role
 		if mongoDb.IsDuplicateKeyError(err) {
 			return nil, status.Error(codes.AlreadyExists, "role already exists")
 		}
-		zap.S().Errorw("error creating role", "error", err)
-		return nil, err
+		return nil, fmt.Errorf("error creating role: %w", err)
 	}
 
-	err = s.notif.RoleUpdate(ctx, role, permission2.RoleUpdateMessage_CREATE)
-	if err != nil {
-		zap.S().Errorw("error sending role update notification", "error", err)
+	if err := s.notif.RoleUpdate(ctx, role, permission2.RoleUpdateMessage_CREATE); err != nil {
+		s.logger.Errorw("error sending role update notification", "error", err)
 	}
 
 	return &permission.CreateRoleResponse{
@@ -112,8 +114,7 @@ func (s *permissionService) UpdateRole(ctx context.Context, req *permission.Role
 		if err == mongoDb.ErrNoDocuments {
 			return nil, status.Error(codes.NotFound, "Role not found")
 		}
-		zap.S().Errorw("error getting role", "error", err)
-		return nil, err
+		return nil, fmt.Errorf("error getting role: %w", err)
 	}
 
 	if req.Priority != nil {
@@ -149,13 +150,11 @@ func (s *permissionService) UpdateRole(ctx context.Context, req *permission.Role
 	err = s.repo.UpdateRole(ctx, role)
 
 	if err != nil {
-		zap.S().Errorw("error updating role", "error", err)
-		return nil, err
+		return nil, fmt.Errorf("error updating role: %w", err)
 	}
 
-	err = s.notif.RoleUpdate(ctx, role, permission2.RoleUpdateMessage_MODIFY)
-	if err != nil {
-		zap.S().Errorw("error sending role update notification", "error", err)
+	if err := s.notif.RoleUpdate(ctx, role, permission2.RoleUpdateMessage_MODIFY); err != nil {
+		s.logger.Errorw("error sending role update notification", "error", err)
 	}
 
 	return &permission.UpdateRoleResponse{
@@ -192,9 +191,8 @@ func (s *permissionService) AddRoleToPlayer(ctx context.Context, req *permission
 		return nil, err
 	}
 
-	err = s.notif.PlayerRolesUpdate(ctx, pId.String(), req.RoleId, permission2.PlayerRolesUpdateMessage_ADD)
-	if err != nil {
-		zap.S().Errorw("error sending player roles update", "error", err)
+	if err := s.notif.PlayerRolesUpdate(ctx, pId.String(), req.RoleId, permission2.PlayerRolesUpdateMessage_ADD); err != nil {
+		s.logger.Errorw("error sending player roles update", "error", err)
 	}
 
 	return &permission.AddRoleToPlayerResponse{}, nil
@@ -224,9 +222,8 @@ func (s *permissionService) RemoveRoleFromPlayer(ctx context.Context, req *permi
 		return nil, err
 	}
 
-	err = s.notif.PlayerRolesUpdate(ctx, pId.String(), req.RoleId, permission2.PlayerRolesUpdateMessage_REMOVE)
-	if err != nil {
-		zap.S().Errorw("error sending player roles update", "error", err)
+	if err := s.notif.PlayerRolesUpdate(ctx, pId.String(), req.RoleId, permission2.PlayerRolesUpdateMessage_REMOVE); err != nil {
+		s.logger.Errorw("error sending player roles update", "error", err)
 	}
 
 	return &permission.RemoveRoleFromPlayerResponse{}, nil
