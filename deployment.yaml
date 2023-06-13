@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: permission
+  namespace: emortalmc
+  labels:
+    app: permission
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: permission
+
+  template:
+    metadata:
+      annotations:
+        linkerd.io/inject: enabled
+      labels:
+        app: permission
+    spec:
+      containers:
+        - name: permission
+          image: ghcr.io/emortalmc/permission-service-go:c3987a67eada4eebd8175bf44cc7696b32eb847e
+          ports:
+            - name: grpc
+              containerPort: 9010
+
+          env:
+            - name: "DEVELOPMENT"
+              value: "false"
+
+            - name: KAFKA_HOST
+              value: default-kafka-bootstrap
+            - name: KAFKA_PORT
+              value: "9092"
+
+            - name: MONGODB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: mongo-connection-string
+                  key: connectionString.standard
+            - name: PORT
+              value: "9010"
