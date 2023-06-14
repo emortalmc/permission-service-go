@@ -1,5 +1,6 @@
 apiVersion: apps/v1
 kind: Deployment
+
 metadata:
   name: permission
   namespace: emortalmc
@@ -29,16 +30,14 @@ spec:
           env:
             - name: "DEVELOPMENT"
               value: "false"
-
             - name: KAFKA_HOST
               value: default-kafka-bootstrap
             - name: KAFKA_PORT
               value: "9092"
-
             - name: MONGODB_URI
               valueFrom:
                 secretKeyRef:
-                  name: mongo-connection-string
-                  key: connectionString.standard
+                  name: permission-service-db-creds
+                  key: connection-string
             - name: PORT
               value: "9010"
