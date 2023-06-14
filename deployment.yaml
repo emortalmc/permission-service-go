@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: permission
-          image: ghcr.io/emortalmc/permission-service-go:40cdbf954f5fc601b3afd7da68057f4a8c574c42
+          image: ghcr.io/emortalmc/permission-service-go:cc0c81b71f04b0f3c1dedae843141355d32522da
           ports:
             - name: grpc
               containerPort: 9010
