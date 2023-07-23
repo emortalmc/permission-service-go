@@ -4,7 +4,7 @@ import (
 	"context"
 	"go.uber.org/zap"
 	"permission-service/internal/config"
-	"permission-service/internal/messaging/notifier"
+	"permission-service/internal/kafka/notifier"
 	"permission-service/internal/repository"
 	"permission-service/internal/service"
 	"sync"

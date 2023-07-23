@@ -191,8 +191,10 @@ func (m *mongoRepository) RemoveRoleFromPlayer(ctx context.Context, playerId uui
 }
 
 func createCodecRegistry() *bsoncodec.Registry {
-	return bson.NewRegistryBuilder().
-		RegisterTypeEncoder(registrytypes.UUIDType, bsoncodec.ValueEncoderFunc(registrytypes.UuidEncodeValue)).
-		RegisterTypeDecoder(registrytypes.UUIDType, bsoncodec.ValueDecoderFunc(registrytypes.UuidDecodeValue)).
-		Build()
+	r := bson.NewRegistry()
+
+	r.RegisterTypeEncoder(registrytypes.UUIDType, bsoncodec.ValueEncoderFunc(registrytypes.UuidEncodeValue))
+	r.RegisterTypeDecoder(registrytypes.UUIDType, bsoncodec.ValueDecoderFunc(registrytypes.UuidDecodeValue))
+
+	return r
 }

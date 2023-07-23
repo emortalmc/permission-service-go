@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc/reflection"
 	"net"
 	"permission-service/internal/config"
-	"permission-service/internal/messaging/notifier"
+	"permission-service/internal/kafka/notifier"
 	"permission-service/internal/repository"
 	"sync"
 )
