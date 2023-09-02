@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/emortalmc/proto-specs/gen/go v0.0.0-20230504195338-987060da628d
 	github.com/golang/mock v1.6.0
-	github.com/google/uuid v1.3.0
+	github.com/google/uuid v1.3.1
 	github.com/ory/dockertest/v3 v3.10.0
 	github.com/segmentio/kafka-go v0.4.42
 	github.com/spf13/viper v1.16.0
