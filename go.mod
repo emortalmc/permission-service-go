@@ -7,7 +7,7 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.3.1
 	github.com/ory/dockertest/v3 v3.10.0
-	github.com/segmentio/kafka-go v0.4.42
+	github.com/segmentio/kafka-go v0.4.43
 	github.com/spf13/viper v1.16.0
 	github.com/stretchr/testify v1.8.4
 	go.mongodb.org/mongo-driver v1.12.1
