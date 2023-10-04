@@ -48,6 +48,11 @@ func NewMongoRepository(ctx context.Context, logger *zap.SugaredLogger, wg *sync
 		playerCollection: database.Collection(playerCollectionName),
 	}
 
+	err = repo.createDefaultRole(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -58,6 +63,20 @@ func NewMongoRepository(ctx context.Context, logger *zap.SugaredLogger, wg *sync
 	}()
 
 	return repo, nil
+}
+
+func (m *mongoRepository) createDefaultRole(ctx context.Context) error {
+	displayName := "{{.Username}}"
+	role := &model.Role{
+		Id:          model.DefaultRoleId,
+		Priority:    0,
+		DisplayName: &displayName,
+		Permissions: make([]model.PermissionNode, 0),
+	}
+
+	// Create default role if it doesn't already exist
+	_, err := m.roleCollection.UpdateOne(ctx, &bson.M{"_id": model.DefaultRoleId}, &bson.M{"$setOnInsert": &role}, options.Update().SetUpsert(true))
+	return err
 }
 
 func (m *mongoRepository) GetAllRoles(ctx context.Context) ([]*model.Role, error) {
