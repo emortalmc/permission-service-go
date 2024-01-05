@@ -3,7 +3,7 @@ module permission-service
 go 1.20
 
 require (
-	github.com/emortalmc/proto-specs/gen/go v0.0.0-20230504195338-987060da628d
+	github.com/emortalmc/proto-specs/gen/go v0.0.0-20240105182338-fee482e40ffd
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.5.0
 	github.com/ory/dockertest/v3 v3.10.0
