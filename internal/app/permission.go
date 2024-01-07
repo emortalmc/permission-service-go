@@ -10,7 +10,7 @@ import (
 	"sync"
 )
 
-func Run(cfg *config.Config, logger *zap.SugaredLogger) {
+func Run(cfg config.Config, logger *zap.SugaredLogger) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	wg := &sync.WaitGroup{}

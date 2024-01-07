@@ -77,7 +77,7 @@ func TestMain(m *testing.M) {
 		logger := unsugared.Sugar()
 
 		// Ping was successful, let's create the mongo repo
-		repo, err = NewMongoRepository(ctx, logger, &sync.WaitGroup{}, &config.MongoDBConfig{URI: uri})
+		repo, err = NewMongoRepository(ctx, logger, &sync.WaitGroup{}, config.MongoDBConfig{URI: uri})
 		database = dbClient.Database(databaseName)
 		return
 	})

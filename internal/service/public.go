@@ -16,7 +16,7 @@ import (
 	"sync"
 )
 
-func RunServices(ctx context.Context, logger *zap.SugaredLogger, wg *sync.WaitGroup, cfg *config.Config,
+func RunServices(ctx context.Context, logger *zap.SugaredLogger, wg *sync.WaitGroup, cfg config.Config,
 	repo repository.Repository, notif notifier.Notifier) {
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.GRPCPort))

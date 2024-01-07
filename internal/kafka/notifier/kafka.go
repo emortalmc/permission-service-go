@@ -20,7 +20,7 @@ type kafkaNotifier struct {
 	w      *kafka.Writer
 }
 
-func NewKafkaNotifier(ctx context.Context, wg *sync.WaitGroup, logger *zap.SugaredLogger, cfg *config.KafkaConfig) Notifier {
+func NewKafkaNotifier(ctx context.Context, wg *sync.WaitGroup, logger *zap.SugaredLogger, cfg config.KafkaConfig) Notifier {
 	w := &kafka.Writer{
 		Addr:        kafka.TCP(fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)),
 		Topic:       topic,
