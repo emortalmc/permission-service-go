@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/emortalmc/proto-specs/gen/go v0.0.0-20240105182338-fee482e40ffd
 	github.com/golang/mock v1.6.0
-	github.com/google/uuid v1.5.0
+	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.1
 	github.com/ory/dockertest/v3 v3.10.0
 	github.com/segmentio/kafka-go v0.4.47
