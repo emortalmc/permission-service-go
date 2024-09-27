@@ -32,6 +32,8 @@ github.com/docker/go-units v0.5.0 h1:69rxXcBk27SvSaaxTtLh/8llcHD8vYHT7WSdRZ/jvr4
 github.com/docker/go-units v0.5.0/go.mod h1:fgPhTUdO+D/Jk86RDLlptpiXQzgHJF7gydDDbaIK4Dk=
 github.com/emortalmc/proto-specs/gen/go v0.0.0-20240105182338-fee482e40ffd h1:dy4XArEgXZGDx8LL8ynHBw2VxAo9vIDyckNIJgWWTB0=
 github.com/emortalmc/proto-specs/gen/go v0.0.0-20240105182338-fee482e40ffd/go.mod h1:se+tHcK9FWxeadkxLF5uj+SPauEye0X+Iq6cGczXGJY=
+github.com/emortalmc/proto-specs/gen/go v0.0.0-20240927103241-2584fd28e0f9 h1:6xOnWrTvG2oJR1J6+B+tdZV5GdlbIgdQixdCCyfj4nA=
+github.com/emortalmc/proto-specs/gen/go v0.0.0-20240927103241-2584fd28e0f9/go.mod h1:se+tHcK9FWxeadkxLF5uj+SPauEye0X+Iq6cGczXGJY=
 github.com/frankban/quicktest v1.11.3/go.mod h1:wRf/ReqHper53s+kmmSZizM8NamnL3IM0I9ntUbOk+k=
 github.com/frankban/quicktest v1.14.6 h1:7Xjx+VpznH+oBnejlPUj8oUpdxnVs4f8XU8WnHkI4W8=
 github.com/frankban/quicktest v1.14.6/go.mod h1:4ptaffx2x8+WTWXmUCuVU6aPUX1/Mz7zb5vbUoiM6w0=
