@@ -3,7 +3,7 @@ module permission-service
 go 1.21
 
 require (
-	github.com/emortalmc/proto-specs/gen/go v0.0.0-20240105182338-fee482e40ffd
+	github.com/emortalmc/proto-specs/gen/go v0.0.0-20240927103241-2584fd28e0f9
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.5.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.1
